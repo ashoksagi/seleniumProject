@@ -1,0 +1,43 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class Example {
+    public static void main(String[] args) {
+        String url = "jdbc:yourdatabaseurl";
+        String user = "yourusername";
+        String password = "yourpassword";
+        String query = "SELECT DISTINCT " +
+                "CD.COMP_ID AS COMP_ID, CD.COMP_NAME AS COMP_NAME, " +
+                "CASE " +
+                "WHEN UPPER(MC.COMP_TYPE) = 'INTERNAL' THEN 'Bank Admin and Support' " +
+                "WHEN UPPER(MC.COMP_TYPE) = 'EXTERNAL' AND UPPER(MC.ISCLIENT) = 'Y' THEN 'Client' " +
+                "WHEN UPPER(MC.COMP_TYPE) = 'EXTERNAL' AND UPPER(MC.ISCLIENT) = 'N' THEN 'Bank Business Unit' " +
+                "ELSE MC.COMP_TYPE END AS COMP_TYPE " +
+                "FROM MCESSERV.COMPANY_DETAILS CD " +
+                "INNER JOIN MCESSERV.MCES_COMPANY MC ON MC.COMP_PK = CD.ACTIVE_COMP_PKREF " +
+                "INNER JOIN MCESSERV.COMP_APP CA ON CA.ACTIVE_COMP_PKREF = CD.ACTIVE_COMP_PKREF " +
+                "INNER JOIN MCESSERV.APPLICATION APP ON CA.APP_ID = APP.APP_ID " +
+                "WHERE UPPER(CA.APP_ID) = ? " +
+                "AND CD.STATUS_CODE NOT IN ('Deactivate', 'Deleted') " +
+                "ORDER BY CD.COMP_ID";
+
+        try (Connection con = DriverManager.getConnection(url, user, password);
+             PreparedStatement pst = con.prepareStatement(query)) {
+
+            pst.setString(1, "YOUR_APP_ID"); // Replace with actual value
+            ResultSet rs = pst.executeQuery();
+
+            while (rs.next()) {
+                System.out.println("COMP_ID: " + rs.getString("COMP_ID"));
+                System.out.println("COMP_NAME: " + rs.getString("COMP_NAME"));
+                System.out.println("COMP_TYPE: " + rs.getString("COMP_TYPE"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
